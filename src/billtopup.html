@@ -1,0 +1,118 @@
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <script>
+            let $ = require('jquery');
+        </script><!--
+        <script src="http://irs.tj/assets/js/jquery.js"></script>
+        <script src="http://irs.tj/assets/js/jquery-migrate-1.2.1.min.js"></script>-->
+        <link href="../node_modules/electron-virtual-keyboard/virtual-keyboard.css" type="text/css" rel="stylesheet"/>
+        <link href="index.css" type="text/css" rel="stylesheet"/>
+        <link rel="stylesheet" href="../contents/bootstrap/css/bootstrap.min.css"/>
+        <meta name="theme-color" content="#46BEDC">
+    </head>
+    <body class="text-center">
+        <main class="form-signin">
+            <img class="mb-4" src="logo.png" height="203">
+            <h1 class="h3 mb-3 fw-normal" style="color: #103E68">Введите купьюру в купьюро-приёмник</h1>
+            <div class="form-floating">
+                <div class="card p-2">
+                    <span id="msg" class="text-danger"></span>
+                    <div class="input-group" style="margin: auto; width: 350px !important;">
+                        <input id="plate" type="text" class="form-control text-center fw-bold" style="font-size: 50px !important; background-color: white; color: #103E68" placeholder="ГОС номер авто:" readonly>
+                    </div>
+                    <hr class="my-4">
+                    <div class="input-group">
+                        <button id="back" type="submit" class="btn control_button" style="background: #103E68; color: white" >< НАЗАД</button>
+                        <input id="label" type="text" class="form-control text-center" placeholder="СУММА:" readonly>
+                        <input id="amount" type="text" class="form-control text-center" value="0.00" style="font-size: 50px !important;  color: #103E68" readonly>
+                        <button id="topup" type="submit" class="btn control_button" style="background: #103E68; color: white" >ПОПОЛНИТЬ</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </body>
+</html>
+<script>
+    const electron    = require('electron');
+    const ipcRenderer = electron.ipcRenderer;
+
+    document.addEventListener('DOMContentLoaded', function (){
+        getPlatId();
+        document.getElementById("topup").disabled = true;
+        ipcRenderer.send('commandFromRender', 'begin');
+        console.log('send begin');
+    });
+
+    ipcRenderer.on('replyFromMain', (event, data) => {
+        console.log(data);
+    });
+
+    ipcRenderer.on('statusCCNet', (event, data) => {
+        console.log(data);
+    });
+
+    let btnTopup = document.getElementById('topup');
+    btnTopup.onclick = function () {
+        console.log('send top-up');
+        let plateId = getPlatId();
+        if (plateValidation(plateId)){
+
+            $.ajax({
+                url : 'http://172.28.100.9/index.php/api/payment/topup?partner_id=100002&pass=testPass&plate=TEST5&amount=1&rrn=11111',
+                type : 'GET',
+                dataType : 'jsonp',
+                success : function (data) {
+                    if (data.status === 'OK') {
+                        document.getElementById('msg').innerText = data.message;
+                        ipcRenderer.send('commandFromRender', 'end');
+                        console.log('send end');
+                        alert('Платеж принят. Спасибо!')
+                        location.href = 'index.html';
+                    } else {
+                        console.log('IRS API returned not OK message on top-up page');
+                    }
+                },
+                error : function (request, error)
+                {
+                    alert(error);
+                    console.log('Ajax error on top-up page',error);
+                }
+            });
+        }
+    }
+
+    // plate id validation
+    function plateValidation(plateId) {
+        let myRegex = /^[a-z0-9]+$/i;
+        if (plateId.length > 6 && plateId.length < 9 ) {
+            return  (myRegex.test(plateId));
+        } else {
+            return false;
+        }
+    }
+    // get value of inserted bill
+    ipcRenderer.on('amount_from_bill_validator', (event, data) => {
+        let currentAmount = parseInt(document.getElementById('amount').value);
+        let amount        = parseInt(data);
+        console.log(amount);
+        console.log(currentAmount);
+        console.log(currentAmount + amount);
+        document.getElementById('amount').value   = currentAmount + amount;
+        document.getElementById("back").disabled  = true;
+        document.getElementById("topup").disabled = false;
+    });
+
+    document.getElementById('back').onclick = function () {
+        location.href = "index.html?plateid=" + document.getElementById('plate').value;
+    }
+
+    //function to get from URL plateId parameter
+    function getPlatId() {
+        let url_str = window.location.href;
+        let url     = new URL(url_str);
+        let p       = url.searchParams.get('plateid');
+        document.getElementById('plate').value = p;
+        return p;
+    }
+</script>

@@ -1,0 +1,155 @@
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <script>
+      let $ = require('jquery');
+    </script>
+    <link href="../node_modules/electron-virtual-keyboard/virtual-keyboard.css" type="text/css" rel="stylesheet"/>
+    <link href="index.css" type="text/css" rel="stylesheet"/>
+    <link rel="stylesheet" href="../contents/bootstrap/css/bootstrap.min.css"/>
+    <meta name="theme-color" content="#46BEDC">
+  </head>
+  <body class="text-center">
+    <main class="form-signin">
+        <img class="mb-4" src="logo.png" height="203">
+        <h1 class="h3 mb-3 fw-normal" style="color: #103E68">Пополнение баланса</h1>
+        <div class="form-floating">
+          <div class="card p-2">
+            <span id="msg" class="text-danger">- - - - - - - -</span>
+            <div class="input-group">
+              <input id="plate" type="text" class="form-control text-center" placeholder="введите номер авто" style="font-size: 30px !important;  color: #103E68" readonly>
+              <button id="next" type="submit" class="btn control_button" style="background: #103E68; color: white" >ДАЛЕЕ</button>
+            </div>
+            <hr class="my-4">
+            <div class="container">
+              <div class="row">
+                <div class="col-1"><button class="key" value="1">1</button></div>
+                <div class="col-1"><button class="key" value="2">2</button></div>
+                <div class="col-1"><button class="key" value="3">3</button></div>
+                <div class="col-1"><button class="key" value="4">4</button></div>
+                <div class="col-1"><button class="key" value="5">5</button></div>
+                <div class="col-1"><button class="key" value="6">6</button></div>
+                <div class="col-1"><button class="key" value="7">7</button></div>
+                <div class="col-1"><button class="key" value="8">8</button></div>
+                <div class="col-1"><button class="key" value="9">9</button></div>
+                <div class="col-1"><button class="key" value="0">0</button></div>
+                <div class="col-2"><button class="key_back" onclick="backSpace()">   ⇦  </button></div>
+              </div>
+              <div class="row text-center" style="margin-right: 10px">
+                <div class="col-1"></div>
+                <div class="col-1"><button class="key mt-1" value="Q">Q</button></div>
+                <div class="col-1"><button class="key mt-1" value="W">W</button></div>
+                <div class="col-1"><button class="key mt-1" value="E">E</button></div>
+                <div class="col-1"><button class="key mt-1" value="R">R</button></div>
+                <div class="col-1"><button class="key mt-1" value="T">T</button></div>
+                <div class="col-1"><button class="key mt-1" value="Y">Y</button></div>
+                <div class="col-1"><button class="key mt-1" value="U">U</button></div>
+                <div class="col-1"><button class="key mt-1" value="I">I</button></div>
+                <div class="col-1"><button class="key mt-1" value="O">O</button></div>
+                <div class="col-1"><button class="key mt-1" value="P">P</button></div>
+              </div>
+              <div class="row text-center" style="margin-left: 30px">
+                <div class="col-1"></div>
+                <div class="col-1" ><button class="key mt-1" value="A">A</button></div>
+                <div class="col-1" ><button class="key mt-1" value="S">S</button></div>
+                <div class="col-1" ><button class="key mt-1" value="D">D</button></div>
+                <div class="col-1" ><button class="key mt-1" value="F">F</button></div>
+                <div class="col-1" ><button class="key mt-1" value="G">G</button></div>
+                <div class="col-1" ><button class="key mt-1" value="H">H</button></div>
+                <div class="col-1" ><button class="key mt-1" value="J">J</button></div>
+                <div class="col-1" ><button class="key mt-1" value="K">K</button></div>
+                <div class="col-1" ><button class="key mt-1" value="L">L</button></div>
+              </div>
+              <div class="row text-center" style="margin-left: 30px">
+                <div class="col-1"><button class="close"></button></div>
+                <div class="col-1"></div>
+                <div class="col-1" ><button class="key mt-1" value="Z">Z</button></div>
+                <div class="col-1" ><button class="key mt-1" value="X">X</button></div>
+                <div class="col-1" ><button class="key mt-1" value="C">C</button></div>
+                <div class="col-1" ><button class="key mt-1" value="V">V</button></div>
+                <div class="col-1" ><button class="key mt-1" value="B">B</button></div>
+                <div class="col-1" ><button class="key mt-1" value="N">N</button></div>
+                <div class="col-1" ><button class="key mt-1" value="M">M</button></div>
+                <div class="col-1" ></div>
+              </div>
+            </div>
+          </div>
+        </div>
+    </main>
+  </body>
+</html>
+<script>
+  let key       = document.getElementsByClassName('key');
+  let plate     = document.getElementById('plate');
+
+  document.addEventListener('DOMContentLoaded', function () {
+    let set = setPlatIdFromURL();
+    if (set) {
+      ipcRenderer.send('commandFromRender', 'end');
+    }
+  });
+
+  for (let i=0; i < key.length; i++) {
+    key[i].onclick = function () {
+      plate.value = plate.value + key[i].value;
+      checkPlate();
+    }
+  }
+
+  function checkPlate() {
+    if (plateValidation(plate.value)){
+      $.ajax({
+        url : 'http://172.28.100.9/index.php/api/payment/check?partner_id=100002&pass=testPass&plate=TEST5',
+        type : 'GET',
+        dataType : 'jsonp',
+        success : function (data) {
+          if (data.status == 'OK') {
+            document.getElementById('msg').innerText = data.message;
+            console.log(data.message);
+          } else {
+            console.log('IRS API returned not OK message on plate insert page');
+          }
+        },
+        error : function (request, error)
+        {
+          console.log('Ajax error on plate insert page',error);
+        }
+      });
+    } else {
+      document.getElementById('msg').innerText = '- - - - - - - -';
+    }
+  }
+
+  function plateValidation(plateId) {
+    let myRegex = /^[a-z0-9]+$/i;
+    if (plateId.length > 6 && plateId.length < 9 ) {
+      return  (myRegex.test(plateId));
+    } else {
+      return false;
+    }
+  }
+
+  function backSpace(){
+    plate.value = plate.value.substr(0, plate.value.length-1);
+    checkPlate();
+  }
+
+  document.getElementById('next').onclick = function () {
+    if(!plateValidation(plate.value)) {
+      document.getElementById('msg').innerText = 'Неправильный ГОС номер авто!!!';
+    } else {
+      location.href = "billtopup.html?plateid=" + document.getElementById('plate').value;
+    }
+  }
+
+  function setPlatIdFromURL() {
+    let url_str = window.location.href;
+    let url     = new URL(url_str);
+    let p       = url.searchParams.get('plateid');
+    if (p === null || p === '')
+      return false;
+    document.getElementById('plate').value = p;
+    return true;
+  }
+
+</script>
