@@ -1,5 +1,6 @@
-#Electron JS - irs_terminal
+# Electron JS - irs_terminal
 
-User interface for Terminal/Kiosk.
-
-Status "In progress"
+# Description
+  User interface for Terminal/Kiosk for Innovativ Road Solution Ltd.
+# Status
+  "In progress"
